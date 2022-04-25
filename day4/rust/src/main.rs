@@ -147,6 +147,8 @@ fn main() {
                 
                 println!("{}: {}",i,s);
                 // panic!("How do you exit gracefully?")
+                // use return with no arguments to exit gracefully
+                // return ;
             }
         }
     }
