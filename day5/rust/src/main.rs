@@ -1,4 +1,4 @@
-use std::{io::{self, BufRead}, collections::{HashMap}, cmp};
+use std::{io::{self, BufRead}, collections::{HashMap}};
 
 #[derive(Clone,Copy,Eq,Hash,Debug)]
 struct Coord {
@@ -10,28 +10,40 @@ struct Coord {
 struct Line {
     start: Coord,
     end: Coord,
+    curr: Coord,
+    stop: bool
 }
 
 impl Iterator for Line {
     type Item=Coord;
 
     fn next(&mut self) -> Option<Coord> {
-        let tx = self.start.x;
-        let ty = self.start.y;
+        let t = self.curr;
 
-        if self.start.x > self.end.x && self.start.y > self.end.y {
+        if self.stop {
             return None
         }
 
-        if self.start.x <= self.end.x {
-            self.start.x += 1;
+        if self.curr.x == self.end.x && self.curr.y == self.end.y {
+            self.stop = true;
+        }
+        else {
+            if self.start.x < self.end.x {
+                self.curr.x += 1;
+            }
+            else if self.start.x > self.end.x {
+                self.curr.x -= 1;
+            }
+
+            if self.start.y < self.end.y {
+                self.curr.y += 1;
+            }
+            else if self.start.y > self.end.y {
+                self.curr.y -= 1;
+            }
         }
 
-        if self.start.y <= self.end.y {
-            self.start.y += 1;
-        }
-
-        return Some(Coord::new(cmp::min(tx, self.end.x), cmp::min(ty, self.end.y)))         
+        return Some(t)         
 
     }
 }
@@ -39,6 +51,14 @@ impl Iterator for Line {
 impl Coord {
     fn new(x: u32, y: u32) -> Self {
         return Coord{x, y}
+    }
+}
+
+impl Line {
+    fn new(x1: u32, y1: u32, x2: u32, y2: u32) -> Line {
+        let start = Coord::new(x1,y1);
+        let end = Coord::new(x2,y2);
+        return Line{start, end, curr: start, stop: false} 
     }
 }
 
@@ -102,19 +122,19 @@ fn parse_lines<T: Iterator<Item=String>>(lines: T) -> Vec<Line>{
         let y2 = coord2.next().unwrap();
 
         let l = 
-            if (x1 < x2) | (y1 < y2) {
-                Line{start: Coord::new(x1,y1), end: Coord::new(x2,y2)}
+            if (x1 < x2) || (y1 < y2) {
+                Line::new(x1,y1, x2,y2)
             }
             else {
-                Line{start: Coord::new(x2,y2), end: Coord::new(x1,y1)}
+                Line::new(x2, y2, x1, y1)
             };
 
-        match diagonal_line(&l) {
-            false => vents.push(l),
-            true => (),
-        }
+        // match diagonal_line(&l) {
+        //     false => vents.push(l),
+        //     true => (),
+        // }
 
-        // vents.push(l);
+        vents.push(l);
 
     }
 
@@ -122,7 +142,7 @@ fn parse_lines<T: Iterator<Item=String>>(lines: T) -> Vec<Line>{
 }
 
 fn diagonal_line(l: &Line) -> bool {
-    if (l.start.x == l.end.x) | (l.start.y == l.end.y) {
+    if (l.start.x == l.end.x) || (l.start.y == l.end.y) {
         return false
     }
     else {
@@ -143,8 +163,8 @@ mod tests {
     use crate::{Coord, Line, intersect, parse_lines, diagonal_line};
 
     #[test]
-    fn test_next_diag() {
-        let mut line = Line{start: Coord::new(0,0), end: Coord::new(2,2)};
+    fn test_next_diag_pos() {
+        let mut line = Line::new(0,0,2,2);
         let c1 = line.next();
         assert_eq!(c1, Some(Coord::new(0,0)));
         let c2 = line.next();
@@ -156,8 +176,21 @@ mod tests {
     }
 
     #[test]
+    fn test_next_diag_neg() {
+        let mut line = Line::new(0,2,2,0);
+        let c1 = line.next();
+        assert_eq!(c1, Some(Coord::new(0,2)));
+        let c2 = line.next();
+        assert_eq!(c2, Some(Coord::new(1,1)));
+        let c3 = line.next();
+        assert_eq!(c3, Some(Coord::new(2,0)));
+        let c4 = line.next();
+        assert_eq!(c4, None);        
+    }
+
+    #[test]
     fn test_next_x() {
-        let mut line = Line{start: Coord::new(1,5), end: Coord::new(3,5)};
+        let mut line = Line::new(1,5,3,5);
         let c1 = line.next();
         assert_eq!(c1, Some(Coord::new(1,5)));
         let c2 = line.next();
@@ -170,7 +203,7 @@ mod tests {
 
     #[test]
     fn test_next_y() {
-        let mut line = Line{start: Coord::new(0,3), end: Coord::new(0,5)};
+        let mut line = Line::new(0,3,0,5);
         let c1 = line.next();
         assert_eq!(c1, Some(Coord::new(0,3)));
         let c2 = line.next();
@@ -183,8 +216,8 @@ mod tests {
 
     #[test]
     fn test_intersect_diag() {
-        let line1 = Line{start: Coord::new(0,0), end: Coord::new(2,2)};
-        let line2 = Line{start: Coord::new(1,1), end: Coord::new(5,5)};
+        let line1 = Line::new(0,0,2,2);
+        let line2 = Line::new(1,1,5,5);
         let v = vec![line1, line2];
         let count = intersect(v);
         assert_eq!(count, 2)
@@ -202,14 +235,14 @@ mod tests {
 
     #[test]
     fn test_filter_vertical() {
-        let line = Line{start: Coord::new(0, 0), end: Coord::new(0, 5)};
+        let line = Line::new(0, 0, 0, 5);
         let b = diagonal_line(&line);
         assert_eq!(b, false);
     }
 
     #[test]
     fn test_filter_horizontal() {
-        let line = Line{start: Coord::new(5, 0), end: Coord::new(0, 0)};
+        let line = Line::new(5, 0, 0, 0);
         let b = diagonal_line(&line);
         assert_eq!(b, false);
     }
