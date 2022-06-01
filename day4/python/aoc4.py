@@ -1,5 +1,5 @@
 import numpy as np
-import io
+import sys
 
 def parse_num(line):
     return list(map(int, line.split(",")))
@@ -10,7 +10,7 @@ def parse_board_line(line):
 def construct_board(lines):
     board = []
     for _ in range(5):
-        bl = parse_board_line(lines.next())  
+        bl = parse_board_line(lines.readline())  
         board.append(bl)
     
     return np.array(board)
@@ -36,8 +36,8 @@ def score(board, r_idx, c_idx):
     return board.sum().sum() - num_drawn
 
 def main():
-    lines = io.StringIO()
-    nums = parse_num(lines.next())
+    lines = sys.stdin
+    nums = parse_num(lines.readline())
 
     boards = []
     # filter for empty lines
