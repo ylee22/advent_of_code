@@ -62,7 +62,7 @@ fn increment_fishes(fishes: &mut Vec<Fish>, days: u16) {
 }
 
 fn main() {
-    let days: u16 = 18;
+    let days: u16 = 80 - 1;
 
     let stdin = io::stdin();
     let mut line_iter = stdin.lock().lines();
