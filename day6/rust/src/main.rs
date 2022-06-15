@@ -76,7 +76,7 @@ mod tests {
         fishes[3] = 2;
         fishes[4] = 1;
         fishes = run_increment_fishes(fishes, day);
-        println!("{:#?}", fishes);
+        println!("{:?}", fishes);
         assert_eq!(fishes.iter().sum::<u128>(), 26)
 
     }
