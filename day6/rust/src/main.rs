@@ -1,110 +1,83 @@
-use core::fmt;
-use std::io::{self, BufRead};
+use std::{io::{self, BufRead}};
 
-#[derive(Clone,PartialEq)]
-struct Fish {
-    timer: u16
-}
+type Fishes = [u128; 9];
 
-impl Fish {
-    fn new(timer: u16) -> Self {
-        return Fish{timer} 
-    }
-
-    fn count(& mut self) -> Option<Fish> {
-        let mut new_fish = None;
-
-        if self.timer == 0 {
-            new_fish = Some(Fish::new(8));
-            self.timer = 6;
-        }
-        else {
-            self.timer -= 1;
-        }
-
-        return new_fish
-    }
-}
-
-impl fmt::Debug for Fish {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "{}", self.timer)
-    }
-}
-
-fn parse_lines(line: String) -> Vec<Fish> {
+fn parse_lines(line: String) -> Fishes {
     let fish_iter =  line.split(',');
-    let mut fishes = Vec::new();
+    let mut fishes = [0; 9];
     for fish in fish_iter {
-        fishes.push(Fish::new(fish.trim().parse::<u16>().unwrap()))
+        let i = fish.trim().parse::<usize>().unwrap();
+        fishes[i] = fishes[i] + 1;
     }
     return fishes
 }
 
-fn increment_fishes(fishes: &mut Vec<Fish>, days: u16) {
-    // why do I need the reference to mut Vec<Fish>?
-    // if i make a reference of fishes, then will adding more to more_fishes also add more to fishes?
-    let mut new_fishes: Vec<Fish> = Vec::new();
+fn increment_fishes(fishes: &Fishes) -> Fishes {
+    let mut updated_fishes = [0; 9];
+    // println!("{:?}", fishes);
 
-    for fish in fishes.iter_mut() {
-        let new_fish = fish.count();
-        match new_fish {
-            Some(f) => new_fishes.push(f),
-            None => ()
+    for i in (0..fishes.len()).rev() {
+        // all fishes are moved from current bucket down to the lower bucket as they age
+        if i > 0 {
+            updated_fishes[i-1] = fishes[i];
+        }
+        else {
+            // all fishes in the 0 timer bucket are reset to timer 6 bucket
+            // new fishes are also added with timer = 8
+            updated_fishes[8] = updated_fishes[8] + fishes[i];
+            updated_fishes[6] = updated_fishes[6] + fishes[i];
         }
     }
 
-    fishes.append(&mut new_fishes);
+    return updated_fishes
+}
 
-    if days > 0 {
-        increment_fishes(fishes, days - 1)
+fn run_increment_fishes(mut fishes: Fishes, days: u32) -> Fishes{
+    for d in 0..days {
+        // println!("days: {}", d);
+        fishes = increment_fishes(&fishes);
     }
+    return fishes
 }
 
 fn main() {
-    let days: u16 = 80 - 1;
+    let days: u32 = 256;
 
     let stdin = io::stdin();
     let mut line_iter = stdin.lock().lines();
     let line = line_iter.next().unwrap().unwrap();
-    let mut fishes: Vec<Fish> = parse_lines(line);
+    let mut fishes: Fishes = parse_lines(line);
 
-    increment_fishes(&mut fishes, days);
+    fishes = run_increment_fishes(fishes, days);
 
-    println!("{} fishes", fishes.len())
+    println!("{} fishes", fishes.iter().sum::<u128>())
     }
 
 
 #[cfg(test)]
 mod tests {
-    use crate::{Fish, increment_fishes};
+    use crate::{run_increment_fishes};
 
     #[test]
     fn test_fish_count() {
-        let mut fish = Fish::new(1);
-        println!("{:?}", fish);
-        let new_fish = fish.count();
-        assert_eq!(new_fish, None);
-        assert_eq!(fish.timer, 0);
-        let new_fish = fish.count().unwrap();
-        println!("{:?}", new_fish);
-        println!("{:?}", fish);
-        assert_eq!(new_fish.timer, 8);
-        assert_eq!(fish.timer, 6)
+        let mut fishes = [0; 9];
+        fishes[0] = 3;
+        println!("{:?}", fishes);
+        fishes = run_increment_fishes(fishes, 1);
+        assert_eq!(fishes, [0,0,0,0,0,0,3,0,3]);
     }
 
     #[test]
     fn test_increment_fishes() {
-        // let day: u16 = 3;
-        // let mut fishes = vec![Fish::new(1, true)];
-        // increment_fishes(&mut fishes, day);
-        // assert_eq!(fishes.len(), 2);
-
-        let day: u16 = 18;
-        let mut fishes = vec![Fish::new(3), Fish::new(4), Fish::new(3), Fish::new(1), Fish::new(2)];
-        increment_fishes(&mut fishes, day-1);
+        let day: u32 = 18;
+        let mut fishes = [0; 9];
+        fishes[1] = 1;
+        fishes[2] = 1;
+        fishes[3] = 2;
+        fishes[4] = 1;
+        fishes = run_increment_fishes(fishes, day);
         println!("{:#?}", fishes);
-        assert_eq!(fishes.len(), 26)
+        assert_eq!(fishes.iter().sum::<u128>(), 26)
 
     }
 }
