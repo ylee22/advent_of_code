@@ -9,7 +9,8 @@ impl Crabs {
     fn calc_fuel(&self, pos: u32) -> u32 {
         let mut fuel = 0;
         for crab in self.pos.iter() {
-            fuel = fuel + crab.abs_diff(pos);
+            let f: u32 = (0..(crab.abs_diff(pos) + 1)).sum();
+            fuel = fuel + f;
         }
         return fuel
     }
@@ -65,9 +66,9 @@ mod tests {
     fn test_calc_fuel() {
         let s = "16,1,2,0,4,2,7,1,2,14".to_string();
         let c: Crabs = parse_crabs(&s);
-        let p = 2;
+        let p = 5;
         let f = c.calc_fuel(p);
-        assert_eq!(f, 37)
+        assert_eq!(f, 168)
     }
 
     #[test]
@@ -75,6 +76,6 @@ mod tests {
         let s = "16,1,2,0,4,2,7,1,2,14".to_string();
         let c: Crabs = parse_crabs(&s);
         let fuel = c.find_least_fuel();
-        assert_eq!(fuel, 37)
+        assert_eq!(fuel, 168)
     }
 }
