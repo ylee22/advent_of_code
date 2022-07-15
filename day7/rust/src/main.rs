@@ -8,8 +8,22 @@ struct Crabs {
 impl Crabs {
     fn calc_fuel(&self, pos: u32) -> u32 {
         let mut fuel = 0;
+        let first = self.pos.iter().min().unwrap();
         for crab in self.pos.iter() {
-            let f: u32 = (0..(crab.abs_diff(pos) + 1)).sum();
+            // proof of arithmetic sum:
+            // S = a + (a + 1d) + (a + 2d) ... + (a + (n - 1)d)
+            // S = (a + (n - 1)d) + (a + (n - 2)d) ... + a
+            // 2S = (2a + (n - 1)d) + (2a + (n - 1)d) ... + (2a + (n - 1)d)
+            // 2S = n(2a + (n - 1)d)
+            // S = (n/2)(2a + (n - 1)d)
+            // S = (n/2)(a + (a + (n - 1)d))
+            // for consecutive numbers, d = 1
+            // S = (n/2)(a + (a + (n - 1)))
+            // a + n - 1 = last number in the sequence
+            // S = (n/2)(first + last)
+            // (a + n - 1) - a + 1 = n
+            let last: u32 = crab.abs_diff(pos);
+            let f: u32 = (last - first + 1)*(first + last)/2;
             fuel = fuel + f;
         }
         return fuel
